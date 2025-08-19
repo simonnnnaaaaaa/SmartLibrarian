@@ -1,0 +1,100 @@
+[
+  {
+    "title": "1984",
+    "summary": "Un roman distopic despre o societate totalitară în care statul controlează gândirea și istoria. Winston Smith încearcă să-și păstreze umanitatea sub ochiul lui Big Brother.",
+    "themes": [
+      "distopie",
+      "control social",
+      "manipulare",
+      "adevar"
+    ]
+  },
+  {
+    "title": "The Hobbit",
+    "summary": "Bilbo Baggins pornește într-o aventură neașteptată pentru a recupera o comoară păzită de dragonul Smaug, descoperind curajul și prietenia.",
+    "themes": [
+      "aventura",
+      "prietenie",
+      "curaj",
+      "fantasy"
+    ]
+  },
+  {
+    "title": "Dune",
+    "summary": "Pe planeta deșertică Arrakis, Paul Atreides este prins într-o luptă pentru putere și destin. Roman despre ecologie, politică și mesianism.",
+    "themes": [
+      "SF",
+      "politica",
+      "ecologie",
+      "razboi"
+    ]
+  },
+  {
+    "title": "Brave New World",
+    "summary": "O societate viitoare menține stabilitatea prin plăcere, condiționare și inginerie socială. Întrebare centrală: ce pierdem când schimbăm libertatea pe confort?",
+    "themes": [
+      "distopie",
+      "tehnologie",
+      "control social"
+    ]
+  },
+  {
+    "title": "Fahrenheit 451",
+    "summary": "Cărțile sunt interzise și arse; un pompier începe să se îndoiască de sistem și caută sens în cunoaștere. O meditație despre cenzură și gândire critică.",
+    "themes": [
+      "distopie",
+      "cenzura",
+      "cunoastere"
+    ]
+  },
+  {
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "summary": "Un băiat află că este vrăjitor și ajunge la Hogwarts, unde prietenia și curajul îl ajută să înfrunte primele pericole legate de un artefact misterios.",
+    "themes": [
+      "prieteni",
+      "magie",
+      "curaj",
+      "coming-of-age"
+    ]
+  },
+  {
+    "title": "The Name of the Wind",
+    "summary": "Kvothe își povestește viața: copil prodigios, artist și arcanist, urmărit de un mister întunecat. Despre talent, obsesie și prețul cunoașterii.",
+    "themes": [
+      "fantasy",
+      "magie",
+      "muzica",
+      "auto-descoperire"
+    ]
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "summary": "Prin ochii lui Scout, un orășel sudist arată nedreptăți rasiale, curaj moral și empatie. O poveste caldă despre maturizare și dreptate.",
+    "themes": [
+      "justitie",
+      "empatie",
+      "rasism",
+      "coming-of-age"
+    ]
+  },
+  {
+    "title": "Pride and Prejudice",
+    "summary": "Elizabeth Bennet navighează prejudecăți și orgolii într-o comedie de moravuri. Analiză fină a alegerilor și relațiilor.",
+    "themes": [
+      "dragoste",
+      "clasa sociala",
+      "familie",
+      "umor"
+    ]
+  },
+  {
+    "title": "The Great Gatsby",
+    "summary": "În anii ’20, visul bogăției și al iubirii se ciocnește de iluzie și superficialitate. Portret al dorinței și dezamăgirii.",
+    "themes": [
+      "american dream",
+      "iubire",
+      "iluzie",
+      "tragic"
+    ]
+  }
+]

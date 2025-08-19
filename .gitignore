@@ -1,0 +1,19 @@
+# venv / cache
+.venv/
+.venv1/
+__pycache__/
+*.pyc
+
+# vector store local
+.chroma/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# environment files (nu urci cheia!)
+.env
