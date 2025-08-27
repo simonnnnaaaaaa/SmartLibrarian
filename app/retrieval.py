@@ -11,10 +11,11 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 DB_DIR = Path(__file__).resolve().parents[1] / ".chroma"
 
 def _embed(text: str) -> list[float]:
-    """Obține embedding pentru textul dat (același model ca la ingest)."""
-    client = OpenAI()  # folosește OPENAI_API_KEY din mediu
-    resp = client.embeddings.create(model="text-embedding-3-small", input=[text])
+    client = OpenAI()
+    model = os.getenv("EMBEDDING_MODEL", EMBEDDING_MODEL)  # respectă ENV
+    resp = client.embeddings.create(model=model, input=[text])
     return resp.data[0].embedding
+
 
 if __name__ == "__main__":
     # test rapid
