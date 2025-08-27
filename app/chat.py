@@ -1,4 +1,3 @@
-# app/chat.py
 import os
 from openai import OpenAI
 from app.retrieval import retrieve
@@ -46,76 +45,65 @@ def recommend(query: str, top_k: int = 4) -> str:
 
 
 def recommend_with_summary(query: str, top_k: int = 4) -> str:
-    """Recomandă o carte și, dacă e posibil, include rezumatul prin tool calling."""
+    """Recomandă o carte și include rezumatul prin tool calling, ANCORAT în candidații RAG."""
+    from app.tools import build_get_summary_tool_for_titles, get_all_titles  # lazy import ca să evităm cicluri
+
     # 1) context din RAG
-    top = retrieve(query, top_k=top_k)
+    top = retrieve(query, top_k=top_k) or []
     context = _format_context(top)
 
-    # 2) mesaje + instrucțiuni
+    # titluri permise = din candidați; fallback pe toate (dacă retrieverul nu găsește nimic)
+    allowed_titles = [r["title"] for r in top if r.get("title")] or get_all_titles()
+
+    # 2) mesaje + instrucțiuni stricte
     system = (
         "Ești Smart Librarian. Folosind DOAR contextul primit, alege o SINGURĂ carte din fragmente. "
-        "După ce alegi titlul, TREBUIE să apelezi funcția get_summary_by_title(title) EXACT o dată, "
-        "cu titlul EXACT (așa cum apare în context). Răspunsul final trebuie să aibă EXACT acest format:\n\n"
+        "NU inventa titluri. Apoi apelează EXACT o dată get_summary_by_title(title) cu un titlu "
+        "din lista admisă.\n"
+        "Formatul final:\n"
         "Titlu: <titlu>\n"
         "De ce:\n"
         "• <motiv 1 scurt din context>\n"
         "• <motiv 2 scurt din context>\n"
         "• <motiv 3 scurt din context>\n"
-        "Note: <o propoziție despre ton/teme din context>\n"
+        "Note: <o propoziție despre ton/teme>\n"
         "Rezumat:\n"
-        "<TEXTUL întors de tool, fără parafrazări>"
+        "<TEXTUL întors de tool, nemodificat>"
     )
 
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": query},
-        {"role": "system", "content": f"CONTEXT RAG (fragmente):\n{context}"},
-    ]
-
-    # 3) definim tool-ul
-    tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_summary_by_title",
-                "description": "Returnează rezumatul complet (3–5 fraze) pentru un titlu exact.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "title": {"type": "string", "description": "Titlul exact al cărții recomandate."}
-                    },
-                    "required": ["title"]
-                },
-            },
-        }
+        {"role": "system", "content": f"CONTEXT RAG (fragmente):\n{context}\n\nTitluri admise: {allowed_titles}"},
     ]
 
     client = OpenAI()
+    tool = build_get_summary_tool_for_titles(allowed_titles)
 
-    # 4) PRIMUL apel: modelul poate decide să cheme tool-ul
+    # 3) PRIMUL apel
     first = client.chat.completions.create(
         model=CHAT_MODEL,
         messages=messages,
-        tools=tools,
+        tools=[tool],
         tool_choice="auto",
-        temperature=0.4,
+        temperature=0.1,  # mai puțină „creativitate”
     )
     msg = first.choices[0].message
 
-    # 5) Dacă a cerut tool-ul, îl executăm local și facem AL DOILEA apel
+    # 4) Tool-call + VALIDARE titlu
     if getattr(msg, "tool_calls", None):
+        import json
         tc = msg.tool_calls[0]
         if tc.function and tc.function.name == "get_summary_by_title":
-            import json
             args = json.loads(tc.function.arguments or "{}")
             title = (args.get("title") or "").strip()
-
+            if title not in allowed_titles:
+                title = allowed_titles[0]  # fallback sigur
             try:
                 summary = get_summary_by_title(title)
             except Exception as e:
                 summary = f"(Nu am găsit rezumat pentru '{title}': {e})"
 
-            # atașăm tool call + răspunsul tool-ului
             messages.append({"role": "assistant", "content": None, "tool_calls": [tc]})
             messages.append({
                 "role": "tool",
@@ -127,9 +115,14 @@ def recommend_with_summary(query: str, top_k: int = 4) -> str:
             followup = client.chat.completions.create(
                 model=CHAT_MODEL,
                 messages=messages,
-                temperature=0.3,
+                temperature=0.1,
             )
             return followup.choices[0].message.content
 
-    # 6) Dacă nu a chemat tool-ul, măcar returnăm recomandarea de bază
-    return msg.content or "Nu am putut genera un răspuns."
+    # 5) fallback: dacă nu a făcut tool-call, alegem top-1 și servim rezumatul noi
+    chosen = allowed_titles[0] if allowed_titles else "(n/a)"
+    try:
+        summary = get_summary_by_title(chosen)
+    except Exception:
+        summary = "(nu am găsit rezumatul)"
+    return f"Titlu: {chosen}\nDe ce:\n• potrivire din context\n• …\n• …\nNote: —\nRezumat:\n{summary}"
