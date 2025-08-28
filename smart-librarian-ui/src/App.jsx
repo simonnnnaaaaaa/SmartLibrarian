@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./styles.css";
 import { recommend, generateImage } from "./lib/api";
 
@@ -12,6 +12,11 @@ export default function App() {
   const [imgLoading, setImgLoading] = useState(false);
   const [imgUrl, setImgUrl] = useState("");
   const imgRef = useRef(null);
+
+  const [voices, setVoices] = useState([]);
+  const [voiceName, setVoiceName] = useState("");
+  const [speaking, setSpeaking] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   const extractTitleFromAnswer = (answer = "") => {
     const m = /^Titlu:\s*(.+)$/mi.exec(answer);
@@ -33,19 +38,16 @@ export default function App() {
     try {
       const data = await recommend(query);
 
-      // helper local: încearcă să extragă "Titlu: <...>" din răspunsul text
       const extractTitle = (answer = "") => {
         const m = /^Titlu:\s*(.+)$/mi.exec(answer);
         return m ? m[1].trim() : null;
       };
 
-      // normalizează răspunsul: string -> {answer, picked_title}
       let normalized =
         typeof data === "string"
           ? { answer: data, picked_title: extractTitle(data) }
           : { ...data };
 
-      // fallback: dacă API nu a setat picked_title, încearcă din text
       if (!normalized.picked_title) {
         const maybe = extractTitle(normalized.answer || "");
         if (maybe) normalized.picked_title = maybe;
@@ -95,6 +97,71 @@ export default function App() {
   const picked = result?.picked_title;
   const answer = result?.answer || "";
 
+
+  const getAnswerText = () => (result?.answer || "").replace(/•/g, "• ").trim();
+
+  useEffect(() => {
+    if (!("speechSynthesis" in window)) return;
+
+    const loadVoices = () => {
+      const list = window.speechSynthesis.getVoices();
+      setVoices(list);
+      // selectează implicit o voce română dacă există, altfel prima
+      const ro = list.find(v => (v.lang || "").toLowerCase().startsWith("ro"));
+      setVoiceName(ro?.name || list[0]?.name || "");
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => { window.speechSynthesis.onvoiceschanged = null; };
+  }, []);
+
+  function speak() {
+    if (!("speechSynthesis" in window)) {
+      alert("Text-to-Speech nu este suportat de acest browser.");
+      return;
+    }
+    const text = getAnswerText();
+    if (!text) return;
+
+    // oprește orice rulare anterioară
+    window.speechSynthesis.cancel();
+
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1;
+    utter.pitch = 1;
+    const selected = voices.find(v => v.name === voiceName);
+    if (selected) utter.voice = selected;
+
+    utter.onstart = () => { setSpeaking(true); setPaused(false); };
+    utter.onend = () => { setSpeaking(false); setPaused(false); };
+    utter.onerror = () => { setSpeaking(false); setPaused(false); };
+
+    window.speechSynthesis.speak(utter);
+  }
+
+  function pauseTTS() {
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause();
+      setPaused(true);
+    }
+  }
+
+  function resumeTTS() {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setPaused(false);
+    }
+  }
+
+  function stopTTS() {
+    window.speechSynthesis.cancel();
+    setSpeaking(false);
+    setPaused(false);
+  }
+
+
   return (
     <div className="container" >
       <h1 className="title">Smart Librarian </h1>
@@ -127,6 +194,73 @@ export default function App() {
             <div>{answer || "(Nu am primit răspuns de la server.)"}</div>
           </div>
         )}
+
+        {result && (
+          <div style={{
+            marginTop: 12, padding: 12, borderRadius: 12,
+            border: "1px solid #1f2937", background: "#0f172a"
+          }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              {/* Select voce (opțional) */}
+              <select
+                value={voiceName}
+                onChange={(e) => setVoiceName(e.target.value)}
+                style={{
+                  flex: "1 1 200px", padding: "10px 12px", borderRadius: 12,
+                  background: "#0b1220", color: "#e5e7eb", border: "1px solid #334155"
+                }}
+              >
+                {voices.length === 0 ? (
+                  <option value="">(Se încarcă vocile…)</option>
+                ) : voices.map(v => (
+                  <option key={v.name} value={v.name}>
+                    {v.name} {v.lang ? `(${v.lang})` : ""}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={speak}
+                disabled={!getAnswerText()}
+                style={{
+                  padding: "10px 16px", borderRadius: 12, border: "1px solid #111827",
+                  background: "#0d9488", color: "#fff", fontWeight: 600, cursor: "pointer",
+                  flex: "1 1 160px"
+                }}
+              >
+                🔊 Ascultă
+              </button>
+
+              <button
+                type="button"
+                onClick={paused ? resumeTTS : pauseTTS}
+                disabled={!speaking}
+                style={{
+                  padding: "10px 16px", borderRadius: 12, border: "1px solid #334155",
+                  background: "#1f2937", color: "#e5e7eb", fontWeight: 600, cursor: speaking ? "pointer" : "not-allowed",
+                  flex: "1 1 140px"
+                }}
+              >
+                {paused ? "Continuă" : "Pauză"}
+              </button>
+
+              <button
+                type="button"
+                onClick={stopTTS}
+                disabled={!speaking}
+                style={{
+                  padding: "10px 16px", borderRadius: 12, border: "1px solid #7f1d1d",
+                  background: "#991b1b", color: "#fff", fontWeight: 600, cursor: speaking ? "pointer" : "not-allowed",
+                  flex: "1 1 120px"
+                }}
+              >
+                Oprește
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {result && (
           <div style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap" }}>
