@@ -61,10 +61,6 @@ export default function App() {
     }
   }
 
-
-
-
-
   async function onGenerateImage() {
     const title =
       result?.picked_title || extractTitleFromAnswer(result?.answer || "");
@@ -106,7 +102,6 @@ export default function App() {
     const loadVoices = () => {
       const list = window.speechSynthesis.getVoices();
       setVoices(list);
-      // selectează implicit o voce română dacă există, altfel prima
       const ro = list.find(v => (v.lang || "").toLowerCase().startsWith("ro"));
       setVoiceName(ro?.name || list[0]?.name || "");
     };
@@ -125,7 +120,6 @@ export default function App() {
     const text = getAnswerText();
     if (!text) return;
 
-    // oprește orice rulare anterioară
     window.speechSynthesis.cancel();
 
     const utter = new SpeechSynthesisUtterance(text);
@@ -165,16 +159,16 @@ export default function App() {
   return (
     <div className="container" >
       <h1 className="title">Smart Librarian </h1>
-      <p className="subtitle">Pune o întrebare firească, iar noi îți recomandăm o carte și îți arătăm rezumatul detaliat.</p>
+      <p className="subtitle">Vrei să citești ceva? noi îți recomandăm o carte și îți arătăm rezumatul detaliat.</p>
 
       <div className="card">
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
-          <label style={{ fontWeight: 600 }}>Întrebare</label>
+          <label style={{ fontWeight: 600 }}>Despre ce ai vrea să fie cartea</label>
           <textarea
             className="input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder='Ex.: "Vreau o carte despre prietenie și magie"'
+            placeholder='Exemplu: "Vreau o carte despre prietenie și magie"'
           />
 
           <div className="row">
@@ -182,7 +176,6 @@ export default function App() {
               {loading ? <span className="row"><span className="spinner"></span> <span>Se caută...</span></span> : "Recomandă"}
             </button>
             <button className="button secondary" type="button" onClick={onReset} disabled={loading}>Reset</button>
-            <span className="badge">Răspuns generat cu RAG</span>
           </div>
 
           {error && <div className="error">{error}</div>}
@@ -201,7 +194,6 @@ export default function App() {
             border: "1px solid #1f2937", background: "#0f172a"
           }}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-              {/* Select voce (opțional) */}
               <select
                 value={voiceName}
                 onChange={(e) => setVoiceName(e.target.value)}
@@ -296,7 +288,8 @@ export default function App() {
 
         {!result && !error && (
           <div className="helper">
-            Exemple: <em>„Vreau o carte despre libertate și control social.”</em>,
+            Exemple: 
+            <em>„Vreau o carte despre libertate și control social.”</em>,
             <em> „Ce-mi recomanzi dacă iubesc poveștile fantastice?”</em>,
             <em> „Ce este 1984?”</em>
           </div>

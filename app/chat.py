@@ -7,14 +7,12 @@ from app.tools import get_summary_by_title
 CHAT_MODEL = os.getenv("CHAT_MODEL", "gpt-4o-mini")
 
 def _format_context(results):
-    """Construiește contextul pe care îl dăm modelului (din top-K)."""
     lines = []
     for r in results:
         lines.append(f"[{r['title']}] {r['preview']}")
     return "\n---\n".join(lines)
 
 def recommend(query: str, top_k: int = 4) -> str:
-    """Recomandă O SINGURĂ carte folosind contextul RAG."""
     top = retrieve(query, top_k=top_k)
     context = _format_context(top)
 
@@ -42,8 +40,7 @@ def recommend(query: str, top_k: int = 4) -> str:
 
 
 def recommend_with_summary(query: str, top_k: int = 4) -> str:
-    """Recomandă o carte și include rezumatul prin tool calling, ANCORAT în candidații RAG."""
-    from app.tools import build_get_summary_tool_for_titles, get_all_titles  # lazy import ca să evităm cicluri
+    from app.tools import build_get_summary_tool_for_titles, get_all_titles
 
     top = retrieve(query, top_k=top_k) or []
     context = _format_context(top)
@@ -113,7 +110,6 @@ def recommend_with_summary(query: str, top_k: int = 4) -> str:
                 "picked_title": title or None,
             }
 
-        # fallback: nu a chemat tool-ul → dăm măcar răspunsul de bază
     return {
         "answer": msg.content or "Nu am putut genera un răspuns.",
         "picked_title": None,

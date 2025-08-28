@@ -17,14 +17,14 @@ def get_summary_by_title(title: str) -> str:
 def _load_items() -> list[dict]:
     with open(DATA_PATH, "r", encoding="utf-8") as f:
         data = json.load(f)
-    # acceptă fie listă simplă, fie {"books":[...]}
+
     return data.get("books", data) if isinstance(data, dict) else data
 
 def get_all_titles() -> List[str]:
     return [it["title"] for it in _load_items() if it.get("title")]
 
 def build_get_summary_tool_for_titles(allowed_titles: List[str]) -> dict:
-    """Schema function-calling care permite DOAR titluri din lista dată."""
+
     base = {
         "type": "function",
         "function": {

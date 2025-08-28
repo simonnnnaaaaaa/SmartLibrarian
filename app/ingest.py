@@ -1,13 +1,13 @@
-# app/ingest.py
 import os, uuid
 from pathlib import Path
 from openai import OpenAI
 import chromadb
 from chromadb.config import Settings
 
-from app.data_utils import load_books  # din pasul 2
+from app.data_utils import load_books
 
-DB_DIR = Path(__file__).resolve().parents[1] / ".chroma"  # folder local pentru Chroma
+DB_DIR = Path(__file__).resolve().parents[1] / ".chroma"
+
 
 def main():
     if not os.getenv("OPENAI_API_KEY"):
@@ -15,35 +15,32 @@ def main():
 
     books = load_books()
 
-    # 1) pregătim textele ce vor fi indexate
-    documents, metadatas, ids = [], [], []
-    for b in books:
-        doc = f"Titlu: {b['title']}\nTeme: {', '.join(b['themes'])}\nRezumat: {b['summary']}"
-        documents.append(doc)
-        metadatas.append({
-            "title": str(b["title"]),
-            "themes": ", ".join(map(str, b.get("themes", [])))  # serializăm lista într-un șir
-        })
 
-        ids.append(str(uuid.uuid4()))
+documents, metadatas, ids = [], [], []
+for b in books:
+    doc = f"Titlu: {b['title']}\nTeme: {', '.join(b['themes'])}\nRezumat: {b['summary']}"
+    documents.append(doc)
+    metadatas.append({
+        "title": str(b["title"]),
+        "themes": ", ".join(map(str, b.get("themes", [])))
+    })
 
-    # 2) embeddings cu OpenAI
-    client = OpenAI()
-    resp = client.embeddings.create(model="text-embedding-3-small", input=documents)
-    vectors = [d.embedding for d in resp.data]
+    ids.append(str(uuid.uuid4()))
 
-    # 3) (re)creăm colecția Chroma
-    db = chromadb.PersistentClient(path=str(DB_DIR), settings=Settings(allow_reset=True))
-    try:
-        db.delete_collection("books")
-    except Exception:
-        pass
-    coll = db.create_collection("books")
+client = OpenAI()
+resp = client.embeddings.create(model="text-embedding-3-small", input=documents)
+vectors = [d.embedding for d in resp.data]
 
-    # 4) adăugăm documentele
-    coll.add(ids=ids, documents=documents, metadatas=metadatas, embeddings=vectors)
+db = chromadb.PersistentClient(path=str(DB_DIR), settings=Settings(allow_reset=True))
+try:
+    db.delete_collection("books")
+except Exception:
+    pass
+coll = db.create_collection("books")
 
-    print(f"Ingestare completă: {len(documents)} documente în {DB_DIR} (colecția 'books').")
+coll.add(ids=ids, documents=documents, metadatas=metadatas, embeddings=vectors)
+
+print(f"Ingestare completă: {len(documents)} documente în {DB_DIR} (colecția 'books').")
 
 if __name__ == "__main__":
     main()

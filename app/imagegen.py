@@ -18,10 +18,6 @@ def _cache_key(*parts: str) -> str:
     return h
 
 def generate_book_image(title: str, hint: str = "", style: str = "cinematic cover", size: str = "1024x1024") -> tuple[bytes, str, str]:
-    """
-    Generează o imagine (PNG) reprezentativă pentru carte.
-    Returnează (bytes, content_type, suggested_filename).
-    """
     prompt = (
         f"Create an original, high-quality book-cover style illustration for the book '{title}'. "
         f"Capture mood and themes. Do not include any text, titles, logos, or real book cover replicas. "
