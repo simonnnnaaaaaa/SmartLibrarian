@@ -17,3 +17,6 @@ Thumbs.db
 
 # environment files (nu urci cheia!)
 .env
+
+.img_cache/
+.tts_cache/
