@@ -26,3 +26,17 @@ async function postJSON(url, body) {
 export async function recommend(question) {
   return postJSON(`${API_BASE}/api/recommend`, { question });
 }
+
+export async function generateImage(title, hint = "", style = "cinematic cover") {
+  const res = await fetch(`${API_BASE}/api/image`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, hint, style })
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`/api/image → ${res.status} ${res.statusText} ${text}`);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
